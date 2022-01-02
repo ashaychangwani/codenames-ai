@@ -1,6 +1,10 @@
 Play Codenames with Glove
 =========================
 
+Dataset Link: https://www.kaggle.com/datasets/thanakomsn/glove6b300dtxt
+Create a folder named "dataset" and paste the TXT file in it.
+First run the convert.py to load the database, then codenames.py to play
+
 This repository implements a simple single-player version of the codenames game
 by Vlaada Chvátil.
 You can play as the agent or the spymaster, and the Glove word vectors will
