@@ -2,6 +2,7 @@ import random
 import re
 import numpy as np
 import math
+from os.path import join
 
 from typing import List, Tuple, Iterable
 
@@ -79,7 +80,7 @@ class TerminalReader(Reader):
 
 
 class Codenames:
-    def __init__(self, cnt_rows=5, cnt_cols=5, cnt_agents=8, agg=.6):
+    def __init__(self, cnt_rows=5, cnt_cols=5, cnt_agents=8, agg=0.6):
         """
         :param cnt_rows: Number of rows to show.
         :param cnt_cols: Number of columns to show.
@@ -100,32 +101,37 @@ class Codenames:
 
     def load(self, datadir):
         # Glove word vectors
-        print("...Loading vectors")
-        self.vectors = np.load(f"{datadir}/glove.6B.300d.npy")
+        print("Loading vectors")
+        self.vectors = np.load(join(datadir, "glove.6B.300d.npy"))
 
         # List of all glove words
-        print("...Loading words")
-        self.word_list = [w.lower().strip() for w in open(f"{datadir}/words", encoding='utf8')]
+        print("Loading words")
+        self.word_list = [
+            w.lower().strip() for w in open(join(datadir, "words"), encoding="utf8")
+        ]
         self.weirdness = [math.log(i + 1) + 1 for i in range(len(self.word_list))]
 
         # Indexing back from word to indices
-        print("...Making word to index dict")
+        print("Creating word to index dictionary")
         self.word_to_index = {w: i for i, w in enumerate(self.word_list)}
 
-        # Get rid of stupid hints like "the"
-        self.stopwords = [w.strip() for w in open('stopwords', encoding='utf8')]
+        # Get rid of unhelpful hints like "the, and"
+        self.stopwords = [w.strip() for w in open("stopwords", encoding="utf8")]
         for w in self.stopwords:
             self.weirdness[self.word_to_index[w]] += 5
 
-        # All words that are allowed to go onto the table
-        print("...Loading codenames")
+        # All words that are allowed
+        print("Loading codenames")
         self.codenames: List[str] = [
             word
-            for word in (w.lower().strip().replace(" ", "-") for w in open("wordlist2", encoding='utf8'))
+            for word in (
+                w.lower().strip().replace(" ", "-")
+                for w in open("wordlist2", encoding="utf8")
+            )
             if word in self.word_to_index
         ]
 
-        print("Ready!")
+        print("Loaded!")
 
     def word_to_vector(self, word: str) -> np.ndarray:
         """
@@ -155,10 +161,11 @@ class Codenames:
         print("Thinking", end="", flush=True)
 
         # Words to avoid the agent guessing.
-        negs = [w for w in words if w not in my_words]
+        discarded_words = [w for w in words if w not in my_words]
         # Worst (highest) inner product with negative words
         nm = (
-            self.vectors @ np.array([self.word_to_vector(word) for word in negs]).T
+            self.vectors
+            @ np.array([self.word_to_vector(word) for word in discarded_words]).T
         ).max(axis=1)
         # Inner product with positive words
         pm = self.vectors @ np.array([self.word_to_vector(word) for word in my_words]).T
@@ -168,22 +175,19 @@ class Codenames:
             if step % 20000 == 0:
                 print(".", end="", flush=True)
 
-            # If the best score is lower than the lower bound, there is no reason
-            # to even try it.
+            # If the best score is lower than the lower bound, there is no reason to even try
             if max(scores) <= lower_bound or clue in black_list:
                 continue
 
             # Order scores by lowest to highest inner product with the clue.
             ss = sorted((s, i) for i, s in enumerate(scores))
-            # Calculate the "real score" by
-            #    (lowest score in group) * [ (group size)^aggressiveness - 1].
-            # The reason we subtract one is that we never want to have a group of
-            # size 1.
+            # Calculate the "real score" by (lowest score in group) * [ (group size)^aggressiveness - 1].
+            # The reason we subtract one is that we never want to have a group of size 1.
             # We divide by log(step), as to not show too many 'weird' words.
             real_score, j = max(
                 (
                     (s - lower_bound)
-                    * ((len(ss) - j) ** self.agg - .99)
+                    * ((len(ss) - j) ** self.agg - 0.99)
                     / self.weirdness[step],
                     j,
                 )
@@ -281,4 +285,5 @@ def main():
             pass
 
 
-main()
+if __name__ == "__main__":
+    main()
