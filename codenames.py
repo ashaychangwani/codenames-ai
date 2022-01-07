@@ -45,7 +45,7 @@ class TerminalReader(Reader):
     def read_picks(
         self, words: List[str], my_words: Iterable[str], cnt: int
     ) -> List[str]:
-        picks = []
+        picks = list()
         while len(picks) < cnt:
             guess = None
             while guess not in words:
@@ -54,7 +54,7 @@ class TerminalReader(Reader):
             if guess in my_words:
                 print("Correct!")
             else:
-                print("Wrong :(")
+                print("Wrong!!")
                 break
         return picks
 
@@ -94,10 +94,10 @@ class Codenames:
 
         # Other
         self.vectors = np.array([])
-        self.word_list = []
-        self.weirdness = []
+        self.word_list = list()
+        self.weirdness = list()
         self.word_to_index = {}
-        self.codenames = []
+        self.codenames = list()
 
     def load(self, datadir):
         # Glove word vectors
@@ -210,7 +210,7 @@ class Codenames:
 
     def play_spymaster(self, reader: Reader):
         """
-        Play a complete game, with the robot being the spymaster.
+        Play a complete game, with the AI being the spymaster.
         """
         words = random.sample(self.codenames, self.cnt_rows * self.cnt_cols)
         my_words = set(random.sample(words, self.cnt_agents))
@@ -229,9 +229,7 @@ class Codenames:
 
             print()
             print(
-                'Clue: "{} {}" (certainty {:.2f}, remaining words {})'.format(
-                    clue, len(group), score, len(my_words)
-                )
+                f'Clue: "{clue} {len(group)}" (certainty {score:.2f}, remaining words {len(my_words)})'
             )
             print()
             for pick in reader.read_picks(words, my_words, len(group)):
@@ -241,22 +239,22 @@ class Codenames:
 
     def play_agent(self, reader: Reader):
         """
-        Play a complete game, with the robot being the agent.
+        Play a complete game, with the AI being the agent.
         """
         words = random.sample(self.codenames, self.cnt_rows * self.cnt_cols)
         my_words = random.sample(words, self.cnt_agents)
-        picked = []
-        while any(w not in picked for w in my_words):
+        selected = list()
+        while any(w not in selected for w in my_words):
             reader.print_words(
-                [w if w not in picked else "---" for w in words], nrows=self.cnt_rows
+                [w if w not in selected else "---" for w in words], nrows=self.cnt_rows
             )
-            print("Your words:", ", ".join(w for w in my_words if w not in picked))
+            print("Your words:", ", ".join(w for w in my_words if w not in selected))
             clue, cnt = reader.read_clue(self.word_to_index.keys())
             for _ in range(cnt):
                 guess = self.most_similar_to_given(
-                    clue, [w for w in words if w not in picked]
+                    clue, [w for w in words if w not in selected]
                 )
-                picked.append(guess)
+                selected.append(guess)
                 answer = input("I guess {}? [Y/n]: ".format(guess))
                 if answer == "n":
                     print("Sorry about that.")
@@ -271,7 +269,7 @@ def main():
     reader = TerminalReader()
     while True:
         try:
-            mode = input("\nWill you be agent or spymaster?: ")
+            mode = input("\nWill you be agent or spymaster?:\t")
         except KeyboardInterrupt:
             print("\nGoodbye!")
             break

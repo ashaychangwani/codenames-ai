@@ -18,7 +18,7 @@ with open(join("dataset", "glove.6B.300d.txt"), "r", encoding="utf8") as data:
         row = list(map(float, rest))
         matrix.append(np.array(row, dtype=np.float32))
         if counter % 5000 == 0:
-            print(f"{counter} points processed...\n")
+            print(f"{counter} points processed...")
 
 np.save(join("dataset", "glove.6B.300d"), np.array(matrix))
 
